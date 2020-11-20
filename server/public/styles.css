@@ -1,0 +1,30 @@
+
+body {
+    margin: 0;
+    /* height: 100vh; */
+}
+
+/* .d-flex {
+    display: flex;
+}
+
+.flex-column {
+    flex-direction: column;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.justify-content-center {
+    justify-content: center;
+} */
+
+.title-text {
+    font-family: 'Fredoka One', cursive;
+    font-size: 80px;
+}
+
+canvas {
+    border-radius: 10px;
+}
