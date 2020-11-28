@@ -6,10 +6,7 @@ const WINDOW_WIDTH = 800;
 
 // let players = [];
 let players = {};
-let player = {};
-let socket;
-
-socket = io();
+let socket = io();
 
 socket.on('currentPlayers', (players) => {
     Object.keys(players).forEach( (id) => {
@@ -22,11 +19,7 @@ socket.on('newPlayer', (playerInfo) => {
 })
 
 socket.on('playerDisconnect', (playerId) => {
-    Object.keys(players).forEach( (otherPlayer) => {
-        if (playerId === otherPlayer) {
-            delete players[otherPlayer];
-        }
-    })
+    delete players[playerId];
 });
 
 socket.on('playerMoved', (playerInfo) => {
@@ -79,13 +72,16 @@ function drawPlayer(player) {
 }
 
 function mouseClicked() {
-    // player.x = mouseX - (PLAYER_SIZE/2);
-    // player.y = mouseY - (PLAYER_SIZE/2);
+
 }
 
 function handleKeyPress() {
     let movementData = {x: 0, y: 0}; 
     let playerSpeed = PLAYER_SPEED;
+
+    if (keyIsDown(ENTER)) {
+        this.document.getElementById('chatBox').focus();
+    }
 
     if (keyIsDown(SHIFT)) {
         playerSpeed *= PLAYER_SPRINT_MOD;
@@ -113,19 +109,23 @@ function handleKeyPress() {
     
 }
 
-function sendChat(event) {
-    event.preventDefault();
-    let msg = document.getElementById('chatBox').value;
+function sendChat(event = null) {
+    event.preventDefault(); // prevent page reload
+    const msg = document.getElementById('chatBox').value.trim();
     document.getElementById('chatBox').value = "";
-
-    socket.emit('chatMsg', msg);
+    if (msg) {
+        socket.emit('chatMsg', msg);
+    }
 }
 
 function handleNewMsg(msgInfo) {
     let messageListElem = document.getElementById('chatMsgs');
-    // let newMessageElem = '<div class="chat-title mx-3 my-2">' + msgInfo.msg + '</div>'
     let newMessageElem = document.createElement('div');
-    newMessageElem.className = "chat-title mx-3 my-2";
-    newMessageElem.innerText = msgInfo.msg;
+    let iconElem = document.createElement('span');
+    iconElem.className = "chat-icon mr-3";
+    iconElem.style.backgroundColor = msgInfo.color;
+    newMessageElem.className = "chat-message mx-3 my-2 d-flex align-items-center";
+    newMessageElem.appendChild(iconElem);
+    newMessageElem.append(msgInfo.msg);
     messageListElem.appendChild(newMessageElem);
 }

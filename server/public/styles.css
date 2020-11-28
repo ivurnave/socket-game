@@ -18,6 +18,17 @@ canvas {
     font-size: 20px;
 }
 
+.chat-message {
+    font-family: 'Fredoka One', cursive;
+    font-size: 16px;
+}
+
+.chat-icon {
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+}
+
 .br-10 {
     border-radius: 10px;
 }

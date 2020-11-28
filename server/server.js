@@ -37,16 +37,6 @@ io.on('connection', function (socket) {
 	// update all other players of the new player
 	io.emit('newPlayer', PLAYER_LIST[socket.id]);
 
-	socket.on('disconnect', function () {
-		console.log('user disconnected');
-
-		// remove this player from our players object
-		delete PLAYER_LIST[socket.id];
-
-		// emit a message to all players to remove this player
-		io.emit('playerDisconnect', socket.id);
-	});
-
 	// when a player moves, update the player data
 	socket.on('playerMovement', (movementData) => {
 		PLAYER_LIST[socket.id].x += movementData.x;
@@ -63,6 +53,22 @@ io.on('connection', function (socket) {
 			msg: msg,
 			color: PLAYER_LIST[socket.id].color
 		})
+	});
+
+	socket.on('disconnect', function () {
+		console.log('user disconnected');
+
+		// send disconnect chat
+		io.emit('newChatMsg', {
+			msg: 'user left the room',
+			color: PLAYER_LIST[socket.id].color
+		})
+
+		// remove this player from our players object
+		delete PLAYER_LIST[socket.id];
+
+		// emit a message to all players to remove this player
+		io.emit('playerDisconnect', socket.id);
 	});
 
 });
