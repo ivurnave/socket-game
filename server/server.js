@@ -23,23 +23,19 @@ io.on('connection', function (socket) {
 	// create a new player and add it to our players object
 	PLAYER_LIST[socket.id] = {
 		playerId: socket.id,
-		// color: '#fae',
 		color: '#' + Math.floor(Math.random()*16777215).toString(16),
-		x: Math.floor(Math.random() * 800),
-		y: Math.floor(Math.random() * 800),
+		x: Math.floor(Math.random() * 700) + 50,
+		y: Math.floor(Math.random() * 700) + 50,
 		vx: 0,
 		vy: 0,
 		hp: 100
 	};
 
-	// console.log(players[socket.id].color);
-
 	// send the players object to the new player
 	socket.emit('currentPlayers', PLAYER_LIST);
 	
 	// update all other players of the new player
-	// socket.broadcast.emit('newPlayer', PLAYER_LIST[socket.id]);
-	socket.emit('newPlayer', PLAYER_LIST[socket.id]);
+	io.emit('newPlayer', PLAYER_LIST[socket.id]);
 
 	socket.on('disconnect', function () {
 		console.log('user disconnected');
@@ -52,27 +48,21 @@ io.on('connection', function (socket) {
 	});
 
 	// when a player moves, update the player data
-	// socket.on('playerMovement', (movementData) => {
-	// 	console.log('a player moved', movementData);
-	// 	PLAYER_LIST[socket.id].x = movementData.x;
-	// 	PLAYER_LIST[socket.id].y = movementData.y;
-
-	// 	// emit a message to all players about the player that moved
-	// 	socket.broadcast.emit('playerMoved', PLAYER_LIST[socket.id]);
-	// })
-
 	socket.on('playerMovement', (movementData) => {
-		console.log('a player moved', movementData);
 		PLAYER_LIST[socket.id].x += movementData.x;
 		PLAYER_LIST[socket.id].y += movementData.y;
 
 		keepInBounds(PLAYER_LIST[socket.id]);
 
-		console.log(PLAYER_LIST[socket.id].x, PLAYER_LIST[socket.id].y)
-
 		// emit a message to all players about the player that moved
-		// socket.broadcast.emit('playerMoved', PLAYER_LIST[socket.id]);
 		io.emit('playerMoved', PLAYER_LIST[socket.id]);
+	});
+
+	socket.on('chatMsg', (msg) => {
+		io.emit('newChatMsg', {
+			msg: msg,
+			color: PLAYER_LIST[socket.id].color
+		})
 	});
 
 });

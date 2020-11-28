@@ -9,46 +9,38 @@ let players = {};
 let player = {};
 let socket;
 
+socket = io();
+
+socket.on('currentPlayers', (players) => {
+    Object.keys(players).forEach( (id) => {
+        addPlayer(players[id]);
+    });
+});
+
+socket.on('newPlayer', (playerInfo) => {
+    addPlayer(playerInfo);
+})
+
+socket.on('playerDisconnect', (playerId) => {
+    Object.keys(players).forEach( (otherPlayer) => {
+        if (playerId === otherPlayer) {
+            delete players[otherPlayer];
+        }
+    })
+});
+
+socket.on('playerMoved', (playerInfo) => {
+    players[playerInfo.playerId] = playerInfo;
+});
+
+socket.on('newChatMsg', (msgInfo) => {
+    handleNewMsg(msgInfo);
+});
+
 function setup() {
     createCanvas(WINDOW_WIDTH, WINDOW_HEIGHT);
     frameRate(60);
 
-    socket = io();
-
-    socket.on('currentPlayers', (players) => {
-        Object.keys(players).forEach( (id) => {
-            addPlayer(players[id]);
-            // if (players[id].playerId === socket.id) {
-            //     addPlayer(players[id], true);
-            // } else {
-            //     addPlayer(players[id]);
-            // }
-        });
-    });
-
-    socket.on('newPlayer', (playerInfo) => {
-        // console.log('adding a new player -- ' + playerInfo.playerId);
-        addPlayer(playerInfo);
-    })
-
-    socket.on('playerDisconnect', (playerId) => {
-        Object.keys(players).forEach( (otherPlayer) => {
-            if (playerId === otherPlayer) {
-                delete players[otherPlayer];
-            }
-        })
-    });
-
-    socket.on('playerMoved', (playerInfo) => {
-        // Object.keys(players).forEach( (playerId) => {
-        //     if (playerInfo.playerId === playerId) {
-        //         // console.log(' a different player moved -- ' + playerInfo.playerId);
-        //         players[playerId] = playerInfo;
-        //     }
-        // })
-        console.log('playerMoved ', playerInfo);
-        players[playerInfo.playerId] = playerInfo;
-    })
 }
 
 function draw() {
@@ -70,9 +62,6 @@ function draw() {
 }
 
 function addPlayer(playerInfo, isCurrentPlayer = false) {
-    // if (isCurrentPlayer) {
-    //     player = playerInfo;
-    // }
     players[playerInfo.playerId] = playerInfo;
 }
 
@@ -94,42 +83,7 @@ function mouseClicked() {
     // player.y = mouseY - (PLAYER_SIZE/2);
 }
 
-// function handleKeyPress() {
-//     const oldPos = [player.x, player.y];
-//     let playerSpeed = PLAYER_SPEED;    
-
-//     if (keyIsDown(SHIFT)) {
-//         playerSpeed *= PLAYER_SPRINT_MOD;
-//     }
-
-//     if (keyIsDown(DOWN_ARROW)) {
-//         player.y += playerSpeed;
-//     }
-    
-//     if (keyIsDown(UP_ARROW)) {
-//         player.y -= playerSpeed;
-//     }
-    
-//     if (keyIsDown(RIGHT_ARROW)) {
-//         player.x += playerSpeed;
-//     }
-
-//     if (keyIsDown(LEFT_ARROW)) {
-//         player.x -= playerSpeed;
-//     }
-
-//     keepInBounds();
-
-//     if (oldPos[0] !== player.x || oldPos[1] !== player.y) {
-//         socket.emit('playerMovement', {
-//             x: player.x,
-//             y: player.y
-//         })
-//     }
-// }
-
 function handleKeyPress() {
-    const oldPos = [player.x, player.y];
     let movementData = {x: 0, y: 0}; 
     let playerSpeed = PLAYER_SPEED;
 
@@ -153,25 +107,25 @@ function handleKeyPress() {
         movementData.x -= playerSpeed;
     }
 
-    // keepInBounds();
-
     if (movementData.x !== 0 || movementData.y !== 0) {
         socket.emit('playerMovement', movementData)
     }
     
 }
 
-function keepInBounds() {
-    if (player.x > WINDOW_WIDTH - (PLAYER_SIZE / 2)) {
-        player.x = WINDOW_WIDTH - (PLAYER_SIZE / 2);
-    }
-    if (player.x < 0 - (PLAYER_SIZE / 2)) {
-        player.x = 0 - (PLAYER_SIZE / 2);
-    }
-    if (player.y > WINDOW_HEIGHT - (PLAYER_SIZE / 2)) {
-        player.y = WINDOW_HEIGHT - (PLAYER_SIZE / 2);
-    }
-    if (player.y < 0 - (PLAYER_SIZE / 2)) {
-        player.y = 0 - (PLAYER_SIZE / 2);
-    }
+function sendChat(event) {
+    event.preventDefault();
+    let msg = document.getElementById('chatBox').value;
+    document.getElementById('chatBox').value = "";
+
+    socket.emit('chatMsg', msg);
+}
+
+function handleNewMsg(msgInfo) {
+    let messageListElem = document.getElementById('chatMsgs');
+    // let newMessageElem = '<div class="chat-title mx-3 my-2">' + msgInfo.msg + '</div>'
+    let newMessageElem = document.createElement('div');
+    newMessageElem.className = "chat-title mx-3 my-2";
+    newMessageElem.innerText = msgInfo.msg;
+    messageListElem.appendChild(newMessageElem);
 }

@@ -6,4 +6,4 @@ For local testing:
 ``` heroku local web ```
 
 For deploying:
-``` git push heroku master ```
+``` git push heroku main ```
