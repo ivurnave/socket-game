@@ -4,9 +4,11 @@ const PLAYER_SPRINT_MOD = 2;
 const WINDOW_HEIGHT = 800;
 const WINDOW_WIDTH = 800;
 
-// let players = [];
-let players = {};
+let players = {}; // should represent all players in the lobby
 let socket = io();
+
+let requestNumber = 0;
+let previousRequests = {};
 
 socket.on('currentPlayers', (players) => {
     Object.keys(players).forEach( (id) => {
@@ -22,8 +24,13 @@ socket.on('playerDisconnect', (playerId) => {
     delete players[playerId];
 });
 
-socket.on('playerMoved', (playerInfo) => {
-    players[playerInfo.playerId] = playerInfo;
+socket.on('playerMoved', (res) => {
+    if (res.playerInfo.playerId === socket.id) {
+        // perform reconcilliation
+        reconcilePosition(res);
+    } else {
+        players[res.playerInfo.playerId] = res.playerInfo;
+    }
 });
 
 socket.on('newChatMsg', (msgInfo) => {
@@ -33,7 +40,6 @@ socket.on('newChatMsg', (msgInfo) => {
 function setup() {
     createCanvas(WINDOW_WIDTH, WINDOW_HEIGHT);
     frameRate(60);
-
 }
 
 function draw() {
@@ -49,7 +55,6 @@ function draw() {
     }
 
     Object.keys(players).forEach((playerId) => {
-        // debugger;
         drawPlayer(players[playerId]);
     })
 }
@@ -65,14 +70,14 @@ function setBackground() {
 }
 
 function drawPlayer(player) {
-    strokeWeight(4);
+    if (player.playerId === socket.id) {
+        strokeWeight(6);
+    } else {
+        strokeWeight(4);
+    }
     stroke(51);
     fill(player.color);
     square(player.x, player.y, PLAYER_SIZE);
-}
-
-function mouseClicked() {
-
 }
 
 function handleKeyPress() {
@@ -104,9 +109,28 @@ function handleKeyPress() {
     }
 
     if (movementData.x !== 0 || movementData.y !== 0) {
+        movementData.requestNumber = requestNumber;
+        previousRequests[requestNumber] = movementData;
+        requestNumber++;
         socket.emit('playerMovement', movementData)
+
+        // update the player position, reconcile later if need be
+        players[socket.id].x += movementData.x;
+        players[socket.id].y += movementData.y;
     }
     
+}
+
+// reconcile the position of the player based on the last authoritive state from the server
+// res = {playerInfo, requestNumber}
+function reconcilePosition(res) {
+    delete previousRequests[res.requestNumber];
+    players[socket.id] = res.playerInfo;
+    Object.keys(previousRequests).forEach( (reqNum) => {
+        let movementData = previousRequests[reqNum];
+        players[socket.id].x += movementData.x;
+        players[socket.id].y += movementData.y;
+    })
 }
 
 function sendChat(event = null) {

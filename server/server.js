@@ -44,8 +44,14 @@ io.on('connection', function (socket) {
 
 		keepInBounds(PLAYER_LIST[socket.id]);
 
+		// response is the update player info along with the original request number
+		var res = {
+			playerInfo: PLAYER_LIST[socket.id],
+			requestNumber: movementData.requestNumber
+		}
+
 		// emit a message to all players about the player that moved
-		io.emit('playerMoved', PLAYER_LIST[socket.id]);
+		io.emit('playerMoved', res);
 	});
 
 	socket.on('chatMsg', (msg) => {
